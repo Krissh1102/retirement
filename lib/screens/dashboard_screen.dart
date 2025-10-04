@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:retierment/screens/chatbotScreen.dart';
 import 'package:retierment/screens/goals_screen.dart';
 import 'package:retierment/screens/investments_screen.dart';
+import 'package:retierment/screens/persnoalizedAI.dart';
 import 'package:retierment/screens/profile_screen.dart';
 import 'package:retierment/services/questions_data.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -1016,13 +1017,13 @@ class _DashboardHomeState extends State<DashboardHome> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // Navigate to detailed investment plan or AI advisor
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) =>
-                            AIAdvisorScreen(firebaseService: _firebaseService),
+                        (context) => PersonalizedRoadmapScreen(
+                          userData: _userData ?? {},
+                        ),
                   ),
                 );
               },
