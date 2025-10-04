@@ -266,22 +266,6 @@ class _RetirementQuestionnaireScreenState
               ],
             ),
 
-            _buildTextField(
-              label: 'Expected Life Expectancy',
-              key: 'lifeExpectancy',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value?.isEmpty == true)
-                  return 'Please enter life expectancy';
-                final lifeExp = int.tryParse(value!);
-                final retAge = int.tryParse(_userData['retirementAge'] ?? '0');
-                if (lifeExp == null || lifeExp <= (retAge ?? 0)) {
-                  return 'Must be greater than retirement age';
-                }
-                return null;
-              },
-            ),
-
             _buildDropdownField(
               label: 'Marital Status',
               key: 'maritalStatus',

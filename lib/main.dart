@@ -38,15 +38,12 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'RetireWise Co-pilot',
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
         home: SplashScreen(),
         routes: <String, WidgetBuilder>{
-          // The '/home' route was used in onboarding_screen.dart, adding it here
           '/home': (BuildContext context) => MainHomeScreen(),
           '/onboarding': (BuildContext context) => OnboardingScreen(),
-
           '/questionnaire':
               (BuildContext context) => RetirementQuestionnaireScreen(),
         },

@@ -164,8 +164,16 @@ class OverviewTab extends StatelessWidget {
 
     List<PieChartSectionData> sections = [];
     List<Color> colors = [
-      const Color(0xFF1A237E), const Color(0xFF3F51B5),
-      const Color(0xFFE91E63), const Color(0xFF4CAF50),
+      Colors.blue,
+      Colors.orange,
+      Colors.green,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.amber,
+      Colors.pink,
+      Colors.indigo,
+      Colors.cyan,
     ];
     int index = 0;
     allocation.forEach((key, value) {
@@ -219,34 +227,37 @@ class OverviewTab extends StatelessWidget {
   }
 
   Widget _buildAssetAllocationLegend(
-      Map<String, dynamic> allocation, List<Color> colors) {
+    Map<String, dynamic> allocation,
+    List<Color> colors,
+  ) {
     return Wrap(
       spacing: 16,
       runSpacing: 8,
-      children: allocation.entries.where((e) => e.value > 0).map((entry) {
-        final index = allocation.keys
-            .where((k) => allocation[k] > 0)
-            .toList()
-            .indexOf(entry.key);
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: colors[index % colors.length],
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '${entry.key.toUpperCase()}: ${entry.value}%',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        );
-      }).toList(),
+      children:
+          allocation.entries.where((e) => e.value > 0).map((entry) {
+            final index = allocation.keys
+                .where((k) => allocation[k] > 0)
+                .toList()
+                .indexOf(entry.key);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: colors[index % colors.length],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${entry.key.toUpperCase()}: ${entry.value}%',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            );
+          }).toList(),
     );
   }
 

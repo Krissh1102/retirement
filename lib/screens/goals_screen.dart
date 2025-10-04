@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:retierment/services/questions_data.dart';
 
+// Define the primary color for reuse (from AppBar background)
+const Color _primaryGreen = Colors.black;
+
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({Key? key}) : super(key: key);
 
@@ -48,12 +51,14 @@ class _GoalsScreenState extends State<GoalsScreen>
         });
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading goals data: $e')));
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading goals data: $e')));
+      }
     }
   }
 
@@ -71,17 +76,17 @@ class _GoalsScreenState extends State<GoalsScreen>
       appBar: AppBar(
         title: const Text(
           'Retirement Goals',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: _refreshData,
           ),
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: const Icon(Icons.edit, color: Colors.black),
             onPressed: _showUpdateGoalsDialog,
             tooltip: 'Edit Goals',
           ),
@@ -128,8 +133,8 @@ class _GoalsScreenState extends State<GoalsScreen>
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+        gradient: LinearGradient(
+          colors: [_primaryGreen, Colors.grey[700]!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -278,7 +283,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         indicatorSize: TabBarIndicatorSize.tab,
         controller: _tabController,
         indicator: BoxDecoration(
-          color: const Color(0xFF2E7D32),
+          color: _primaryGreen,
           borderRadius: BorderRadius.circular(25),
         ),
         labelColor: Colors.white,
@@ -311,7 +316,7 @@ class _GoalsScreenState extends State<GoalsScreen>
 
     // Generate projected data points
     List<FlSpot> projectionSpots = [];
-    List<FlSpot> currentSpots = [FlSpot(0, currentCorpus)];
+    // List<FlSpot> currentSpots = [FlSpot(0, currentCorpus)]; // Unused
 
     final annualSip = 120000.0; // Assuming 10k monthly SIP
     final returnRate = 0.12; // 12% annual return
@@ -333,7 +338,11 @@ class _GoalsScreenState extends State<GoalsScreen>
           children: [
             const Text(
               'Goal Progress Projection',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _primaryGreen, // Highlighted Title
+              ),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -389,12 +398,12 @@ class _GoalsScreenState extends State<GoalsScreen>
                     LineChartBarData(
                       spots: projectionSpots,
                       isCurved: true,
-                      color: const Color(0xFF2E7D32),
+                      color: _primaryGreen,
                       barWidth: 3,
                       dotData: FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: const Color(0xFF2E7D32).withOpacity(0.1),
+                        color: _primaryGreen.withOpacity(0.1),
                       ),
                     ),
                   ],
@@ -406,11 +415,7 @@ class _GoalsScreenState extends State<GoalsScreen>
               children: [
                 _buildChartLegend('Target Goal', Colors.red, true),
                 const SizedBox(width: 16),
-                _buildChartLegend(
-                  'Projected Growth',
-                  const Color(0xFF2E7D32),
-                  false,
-                ),
+                _buildChartLegend('Projected Growth', _primaryGreen, false),
               ],
             ),
           ],
@@ -460,7 +465,11 @@ class _GoalsScreenState extends State<GoalsScreen>
           children: [
             const Text(
               'Retirement Details',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _primaryGreen, // Highlighted Title
+              ),
             ),
             const SizedBox(height: 16),
             _buildDetailRow(
@@ -520,10 +529,14 @@ class _GoalsScreenState extends State<GoalsScreen>
               children: [
                 const Text(
                   'Retirement Lifestyle Goals',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryGreen, // Highlighted Title
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Color(0xFF2E7D32)),
+                  icon: const Icon(Icons.add_circle, color: _primaryGreen),
                   onPressed: _showAddLifestyleGoalDialog,
                   tooltip: 'Add Lifestyle Goal',
                 ),
@@ -564,7 +577,7 @@ class _GoalsScreenState extends State<GoalsScreen>
                     children: [
                       const Icon(
                         Icons.check_circle_outline,
-                        color: Color(0xFF2E7D32),
+                        color: _primaryGreen,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -601,8 +614,12 @@ class _GoalsScreenState extends State<GoalsScreen>
             const Icon(Icons.flag_outlined, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             const Text(
-              'No milestones set',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              'No Milestones Set', // Capitalized for better title feel
+              style: TextStyle(
+                fontSize: 18,
+                color: _primaryGreen, // Highlighted Title
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const Text(
               'Milestones help track your progress',
@@ -614,7 +631,7 @@ class _GoalsScreenState extends State<GoalsScreen>
               icon: const Icon(Icons.auto_awesome),
               label: const Text('Generate Milestones'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
+                backgroundColor: _primaryGreen,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -647,15 +664,13 @@ class _GoalsScreenState extends State<GoalsScreen>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border:
-                  achieved
-                      ? Border.all(color: const Color(0xFF2E7D32), width: 2)
-                      : null,
+                  achieved ? Border.all(color: _primaryGreen, width: 2) : null,
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
               leading: CircleAvatar(
                 backgroundColor:
-                    achieved ? const Color(0xFF2E7D32) : Colors.grey.shade400,
+                    achieved ? _primaryGreen : Colors.grey.shade400,
                 child:
                     achieved
                         ? const Icon(Icons.check, color: Colors.white)
@@ -672,6 +687,10 @@ class _GoalsScreenState extends State<GoalsScreen>
                 'Milestone ${milestone['milestone_number']} - $targetPercentage% Goal',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
+                  color:
+                      achieved
+                          ? Colors.grey.shade500
+                          : Colors.black, // Changed title color on achieve
                   decoration: achieved ? TextDecoration.lineThrough : null,
                 ),
               ),
@@ -684,7 +703,7 @@ class _GoalsScreenState extends State<GoalsScreen>
                     Text(
                       'Achieved: ${_formatDate(milestone['achievement_date'])}',
                       style: const TextStyle(
-                        color: Color(0xFF2E7D32),
+                        color: _primaryGreen,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -692,7 +711,7 @@ class _GoalsScreenState extends State<GoalsScreen>
               ),
               trailing:
                   achieved
-                      ? const Icon(Icons.emoji_events, color: Color(0xFF2E7D32))
+                      ? const Icon(Icons.emoji_events, color: _primaryGreen)
                       : Icon(
                         Icons.radio_button_unchecked,
                         color: Colors.grey.shade400,
@@ -766,7 +785,7 @@ class _GoalsScreenState extends State<GoalsScreen>
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
+                  backgroundColor: _primaryGreen,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Update'),
@@ -809,7 +828,7 @@ class _GoalsScreenState extends State<GoalsScreen>
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
+                  backgroundColor: _primaryGreen,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Add'),
@@ -959,51 +978,67 @@ class _GoalsScreenState extends State<GoalsScreen>
     }
   }
 
+  double _calculateFutureValue(
+    double monthlySip,
+    double annualRate,
+    int years,
+  ) {
+    final rate = annualRate / 100 / 12;
+    final n = years * 12;
+
+    if (rate == 0) {
+      return monthlySip * n;
+    }
+
+    // Future Value of an Annuity (SIP)
+    final fv = monthlySip * ((Math.pow(1 + rate, n) - 1) / rate) * (1 + rate);
+    return fv;
+  }
+
   String _calculateRequiredSip() {
     final targetCorpus = retirementGoals?['target_corpus']?.toDouble() ?? 0.0;
     final currentCorpus = retirementGoals?['current_corpus']?.toDouble() ?? 0.0;
     final yearsToRetirement = retirementGoals?['years_to_retirement'] ?? 30;
+    final annualReturnRate = 0.12; // Assuming 12%
 
-    final remainingAmount = targetCorpus - currentCorpus;
-    final monthlyRate = 0.12 / 12; // 12% annual return
-    final months = yearsToRetirement * 12;
+    final futureValueOfCurrentCorpus =
+        currentCorpus * Math.pow(1 + annualReturnRate, yearsToRetirement);
 
-    if (months <= 0 || monthlyRate <= 0) return '0';
+    final requiredFutureValueFromSip =
+        targetCorpus - futureValueOfCurrentCorpus;
 
-    final requiredSip =
-        remainingAmount *
-        monthlyRate /
-        ((1 + monthlyRate) * (Math.pow(1 + monthlyRate, months) - 1));
+    if (requiredFutureValueFromSip <= 0) {
+      return '0';
+    }
 
-    return _formatAmount(requiredSip);
+    final rate = annualReturnRate / 12;
+    final n = yearsToRetirement * 12;
+
+    // Monthly SIP needed to achieve requiredFutureValueFromSip
+    final monthlySip =
+        requiredFutureValueFromSip * rate / (Math.pow(1 + rate, n) - 1);
+
+    return _formatAmount(monthlySip);
   }
 
   String _calculateSuccessRate() {
     final targetCorpus = retirementGoals?['target_corpus']?.toDouble() ?? 0.0;
     final currentCorpus = retirementGoals?['current_corpus']?.toDouble() ?? 0.0;
+    final monthlySip = retirementGoals?['monthly_sip']?.toDouble() ?? 0.0;
     final yearsToRetirement = retirementGoals?['years_to_retirement'] ?? 30;
+    final annualReturnRate = 0.12; // Assuming 12%
 
-    if (targetCorpus <= 0 || yearsToRetirement <= 0) return '0';
+    final totalProjectedCorpus =
+        currentCorpus * Math.pow(1 + annualReturnRate, yearsToRetirement) +
+        _calculateFutureValue(
+          monthlySip,
+          annualReturnRate * 100,
+          yearsToRetirement,
+        );
 
-    final currentProgress = (currentCorpus / targetCorpus) * 100;
-    final timeProgress =
-        (30 - yearsToRetirement) / 30 * 100; // Assuming 30 year max
+    if (targetCorpus == 0) return '0.0';
 
-    final successRate = (currentProgress + timeProgress) / 2;
-    return successRate.clamp(0, 100).toStringAsFixed(0);
-  }
-
-  double _calculateFutureValue(
-    double monthlyAmount,
-    double annualRate,
-    int years,
-  ) {
-    if (monthlyAmount <= 0 || years <= 0) return 0.0;
-
-    final monthlyRate = annualRate / 100 / 12;
-    final months = years * 12;
-
-    return monthlyAmount *
-        ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+    final successRate = (totalProjectedCorpus / targetCorpus) * 100;
+    return successRate.clamp(0.0, 100.0).toStringAsFixed(1);
   }
 }

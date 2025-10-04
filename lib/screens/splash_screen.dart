@@ -1,4 +1,3 @@
-// screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -26,19 +25,15 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    // Wait for the animation to complete
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    // Check if user is already signed in with Firebase
     final User? currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser != null) {
-      // User is already authenticated, go to dashboard
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      // No authenticated user, go to onboarding
       Navigator.pushReplacementNamed(context, '/onboarding');
     }
   }

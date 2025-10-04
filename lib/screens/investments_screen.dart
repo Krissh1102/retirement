@@ -40,7 +40,7 @@ class _InvestmentScreenState extends State<InvestmentScreen>
     try {
       final userData = await _firebaseService.loadUserProfile();
 
-      if (!mounted) return; // ✅ Prevent setState after dispose
+      if (!mounted) return;
 
       if (userData != null && userData['investments'] != null) {
         setState(() {
@@ -94,30 +94,51 @@ class _InvestmentScreenState extends State<InvestmentScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         title: const Text(
           'Investment Portfolio',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF000000),
+            fontSize: 20,
+            letterSpacing: -0.8,
+          ),
         ),
-        backgroundColor: const Color(0xFF1A237E),
+        backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF000000)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_chart, color: Colors.white),
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: Color(0xFF000000),
+              size: 26,
+            ),
             onPressed: () => _showAddInvestmentBottomSheet(),
             tooltip: 'Add Investment',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Color(0xFF000000),
+              size: 24,
+            ),
             onPressed: _refreshData,
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body:
           isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF000000),
+                  strokeWidth: 2.5,
+                ),
+              )
               : RefreshIndicator(
+                color: const Color(0xFF000000),
                 onRefresh: _refreshData,
                 child: Column(
                   children: [
@@ -130,7 +151,6 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                             child: TabBarView(
                               controller: _tabController,
                               children: [
-                                // Use the new tab widgets
                                 OverviewTab(
                                   portfolioData: portfolioData,
                                   holdings: holdings,
@@ -166,20 +186,16 @@ class _InvestmentScreenState extends State<InvestmentScreen>
     final monthlySip = portfolioData?['monthly_sip']?.toDouble() ?? 0.0;
 
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A237E), Color(0xFF3F51B5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF000000),
+        borderRadius: BorderRadius.circular(4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -188,13 +204,15 @@ class _InvestmentScreenState extends State<InvestmentScreen>
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Portfolio Summary',
+                'PORTFOLIO',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
                 ),
               ),
               Container(
@@ -203,28 +221,47 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(2),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       returnsPercentage >= 0
-                          ? Icons.trending_up
-                          : Icons.trending_down,
-                      color: Colors.white,
-                      size: 16,
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      color: Colors.black,
+                      size: 12,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${returnsPercentage >= 0 ? '+' : ''}${returnsPercentage.toStringAsFixed(2)}%',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  'CURRENT VALUE',
+                  '₹${formatAmount(currentValue)}',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSummaryCard(
+                  'INVESTED',
+                  '₹${formatAmount(totalInvested)}',
                 ),
               ),
             ],
@@ -234,39 +271,15 @@ class _InvestmentScreenState extends State<InvestmentScreen>
             children: [
               Expanded(
                 child: _buildSummaryCard(
-                  'Current Value',
-                  '₹${formatAmount(currentValue)}',
-                  Icons.account_balance_wallet,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  'Total Invested',
-                  '₹${formatAmount(totalInvested)}',
-                  Icons.trending_up,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  'Total Returns',
+                  'RETURNS',
                   '₹${formatAmount(totalReturns)}',
-                  Icons.show_chart,
-                  isReturn: true,
-                  returnValue: totalReturns,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: _buildSummaryCard(
-                  'Monthly SIP',
+                  'MONTHLY SIP',
                   '₹${formatAmount(monthlySip)}',
-                  Icons.autorenew,
                 ),
               ),
             ],
@@ -276,54 +289,34 @@ class _InvestmentScreenState extends State<InvestmentScreen>
     );
   }
 
-  Widget _buildSummaryCard(
-    String title,
-    String value,
-    IconData icon, {
-    bool isReturn = false,
-    double returnValue = 0,
-  }) {
-    Color cardColor = Colors.white.withOpacity(0.1);
-    Color textColor = Colors.white;
-
-    if (isReturn) {
-      cardColor =
-          returnValue >= 0
-              ? Colors.green.withOpacity(0.2)
-              : Colors.red.withOpacity(0.2);
-    }
-
+  Widget _buildSummaryCard(String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: textColor, size: 16),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.8),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
             ),
           ),
         ],
@@ -333,24 +326,35 @@ class _InvestmentScreenState extends State<InvestmentScreen>
 
   Widget _buildTabBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
       ),
       child: TabBar(
         indicatorSize: TabBarIndicatorSize.tab,
         controller: _tabController,
-        indicator: BoxDecoration(
-          color: const Color(0xFF1A237E),
-          borderRadius: BorderRadius.circular(25),
+        indicator: const BoxDecoration(
+          color: Color(0xFF000000),
+          borderRadius: BorderRadius.zero,
         ),
         labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey.shade600,
+        unselectedLabelColor: const Color(0xFF666666),
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        dividerColor: Colors.transparent,
         tabs: const [
-          Tab(text: 'Overview'),
-          Tab(text: 'Holdings'),
-          Tab(text: 'Transactions'),
+          Tab(text: 'OVERVIEW'),
+          Tab(text: 'HOLDINGS'),
+          Tab(text: 'TRANSACTIONS'),
         ],
       ),
     );
@@ -365,24 +369,32 @@ class _InvestmentScreenState extends State<InvestmentScreen>
           (context) => Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
             ),
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFF1A237E),
-                      radius: 24,
-                      child: Text(
-                        holding['symbol']?.substring(0, 2).toUpperCase() ??
-                            'NA',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF000000),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Center(
+                        child: Text(
+                          holding['symbol']?.substring(0, 2).toUpperCase() ??
+                              'NA',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            letterSpacing: 0,
+                          ),
                         ),
                       ),
                     ),
@@ -395,14 +407,19 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                             holding['name'] ?? 'Unknown',
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF000000),
+                              letterSpacing: -0.5,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             holding['symbol'] ?? '',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                            style: const TextStyle(
+                              color: Color(0xFF666666),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
@@ -410,7 +427,9 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                     ),
                   ],
                 ),
-                const Divider(height: 32),
+                const SizedBox(height: 28),
+                Container(height: 1, color: const Color(0xFFE0E0E0)),
+                const SizedBox(height: 24),
                 _buildDetailRow('Quantity', '${holding['quantity'] ?? 0}'),
                 _buildDetailRow(
                   'Average Price',
@@ -424,11 +443,11 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                   'Returns',
                   '${(holding['return_percentage']?.toDouble() ?? 0) >= 0 ? '+' : ''}${(holding['return_percentage']?.toDouble() ?? 0).toStringAsFixed(2)}%',
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: OutlinedButton(
                         onPressed: () {
                           Navigator.pop(context);
                           _showAddInvestmentBottomSheet(
@@ -436,16 +455,30 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                             symbol: holding['symbol'],
                           );
                         },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Buy More'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1A237E),
+                          foregroundColor: const Color(0xFF000000),
+                          side: const BorderSide(
+                            color: Color(0xFF000000),
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        child: const Text(
+                          'BUY MORE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
+                      child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
                           _showAddInvestmentBottomSheet(
@@ -453,11 +486,22 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                             symbol: holding['symbol'],
                           );
                         },
-                        icon: const Icon(Icons.remove),
-                        label: const Text('Sell'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: const Color(0xFF000000),
                           foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        child: const Text(
+                          'SELL',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
@@ -471,17 +515,27 @@ class _InvestmentScreenState extends State<InvestmentScreen>
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            style: const TextStyle(
+              color: Color(0xFF666666),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
           ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: Color(0xFF000000),
+              letterSpacing: -0.3,
+            ),
           ),
         ],
       ),
@@ -510,14 +564,14 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
+                      top: Radius.circular(2),
                     ),
                   ),
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context).viewInsets.bottom,
-                    left: 24,
-                    right: 24,
-                    top: 24,
+                    left: 28,
+                    right: 28,
+                    top: 28,
                   ),
                   child: SingleChildScrollView(
                     child: Column(
@@ -528,178 +582,186 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Add Investment',
+                              'ADD INVESTMENT',
                               style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF000000),
+                                letterSpacing: 1,
                               ),
                             ),
                             IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(Icons.close, size: 24),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         const Text(
-                          'Transaction Type',
+                          'TYPE',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            color: Color(0xFF000000),
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            ChoiceChip(
-                              label: const Text('Buy'),
-                              selected: selectedType == 'buy',
-                              onSelected: (selected) {
-                                setModalState(() => selectedType = 'buy');
-                              },
-                              selectedColor: Colors.green.withOpacity(0.3),
+                            _buildChoiceChip(
+                              'BUY',
+                              'buy',
+                              selectedType,
+                              setModalState,
+                              (val) => selectedType = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('Sell'),
-                              selected: selectedType == 'sell',
-                              onSelected: (selected) {
-                                setModalState(() => selectedType = 'sell');
-                              },
-                              selectedColor: Colors.red.withOpacity(0.3),
+                            _buildChoiceChip(
+                              'SELL',
+                              'sell',
+                              selectedType,
+                              setModalState,
+                              (val) => selectedType = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('SIP'),
-                              selected: selectedType == 'sip',
-                              onSelected: (selected) {
-                                setModalState(() => selectedType = 'sip');
-                              },
-                              selectedColor: Colors.blue.withOpacity(0.3),
+                            _buildChoiceChip(
+                              'SIP',
+                              'sip',
+                              selectedType,
+                              setModalState,
+                              (val) => selectedType = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('Dividend'),
-                              selected: selectedType == 'dividend',
-                              onSelected: (selected) {
-                                setModalState(() => selectedType = 'dividend');
-                              },
-                              selectedColor: Colors.orange.withOpacity(0.3),
+                            _buildChoiceChip(
+                              'DIVIDEND',
+                              'dividend',
+                              selectedType,
+                              setModalState,
+                              (val) => selectedType = val,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         const Text(
-                          'Category',
+                          'CATEGORY',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            color: Color(0xFF000000),
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            ChoiceChip(
-                              label: const Text('Equity'),
-                              selected: selectedCategory == 'equity',
-                              onSelected: (selected) {
-                                setModalState(
-                                  () => selectedCategory = 'equity',
-                                );
-                              },
+                            _buildChoiceChip(
+                              'EQUITY',
+                              'equity',
+                              selectedCategory,
+                              setModalState,
+                              (val) => selectedCategory = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('Debt'),
-                              selected: selectedCategory == 'debt',
-                              onSelected: (selected) {
-                                setModalState(() => selectedCategory = 'debt');
-                              },
+                            _buildChoiceChip(
+                              'DEBT',
+                              'debt',
+                              selectedCategory,
+                              setModalState,
+                              (val) => selectedCategory = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('Gold'),
-                              selected: selectedCategory == 'gold',
-                              onSelected: (selected) {
-                                setModalState(() => selectedCategory = 'gold');
-                              },
+                            _buildChoiceChip(
+                              'GOLD',
+                              'gold',
+                              selectedCategory,
+                              setModalState,
+                              (val) => selectedCategory = val,
                             ),
-                            ChoiceChip(
-                              label: const Text('Others'),
-                              selected: selectedCategory == 'others',
-                              onSelected: (selected) {
-                                setModalState(
-                                  () => selectedCategory = 'others',
-                                );
-                              },
+                            _buildChoiceChip(
+                              'OTHERS',
+                              'others',
+                              selectedCategory,
+                              setModalState,
+                              (val) => selectedCategory = val,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: symbolController,
-                          decoration: InputDecoration(
-                            labelText: 'Symbol/Ticker *',
-                            hintText: 'e.g., RELIANCE, INFY',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            prefixIcon: const Icon(Icons.code),
-                          ),
-                          textCapitalization: TextCapitalization.characters,
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          symbolController,
+                          'Symbol/Ticker',
+                          'e.g., RELIANCE, INFY',
+                          isCapitalized: true,
                         ),
                         const SizedBox(height: 16),
-                        TextField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            labelText: 'Investment Name *',
-                            hintText: 'e.g., Reliance Industries Ltd',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            prefixIcon: const Icon(Icons.business),
-                          ),
+                        _buildTextField(
+                          nameController,
+                          'Investment Name',
+                          'e.g., Reliance Industries Ltd',
                         ),
                         if (selectedType != 'dividend')
                           const SizedBox(height: 16),
                         if (selectedType != 'dividend')
-                          TextField(
-                            controller: quantityController,
-                            decoration: InputDecoration(
-                              labelText: 'Quantity *',
-                              hintText: 'Number of units',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              prefixIcon: const Icon(Icons.numbers),
-                            ),
-                            keyboardType: TextInputType.number,
+                          _buildTextField(
+                            quantityController,
+                            'Quantity',
+                            'Number of units',
+                            isNumber: true,
                           ),
                         const SizedBox(height: 16),
-                        TextField(
-                          controller: priceController,
-                          decoration: InputDecoration(
-                            labelText:
-                                selectedType == 'dividend'
-                                    ? 'Dividend Amount *'
-                                    : 'Price per Unit *',
-                            hintText:
-                                selectedType == 'dividend'
-                                    ? 'Total dividend received'
-                                    : 'Price in ₹',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            prefixIcon: const Icon(Icons.currency_rupee),
-                          ),
-                          keyboardType: TextInputType.number,
+                        _buildTextField(
+                          priceController,
+                          selectedType == 'dividend'
+                              ? 'Dividend Amount'
+                              : 'Price per Unit',
+                          selectedType == 'dividend'
+                              ? 'Total dividend received'
+                              : 'Price in ₹',
+                          isNumber: true,
                         ),
                         const SizedBox(height: 16),
                         TextField(
                           controller: dateController,
                           decoration: InputDecoration(
-                            labelText: 'Date *',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            labelText: 'Date',
+                            labelStyle: const TextStyle(
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
-                            prefixIcon: const Icon(Icons.calendar_today),
+                            hintStyle: const TextStyle(
+                              color: Color(0xFFBBBBBB),
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFFAFAFA),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(2),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE0E0E0),
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(2),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFE0E0E0),
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(2),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF000000),
+                                width: 2,
+                              ),
+                            ),
                           ),
                           readOnly: true,
                           onTap: () async {
@@ -716,7 +778,7 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                             }
                           },
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         Row(
                           children: [
                             Expanded(
@@ -726,8 +788,23 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 16,
                                   ),
+                                  side: const BorderSide(
+                                    color: Color(0xFFE0E0E0),
+                                    width: 1.5,
+                                  ),
+                                  foregroundColor: const Color(0xFF666666),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
-                                child: const Text('Cancel'),
+                                child: const Text(
+                                  'CANCEL',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -744,23 +821,113 @@ class _InvestmentScreenState extends State<InvestmentScreen>
                                       dateController.text,
                                     ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1A237E),
+                                  backgroundColor: const Color(0xFF000000),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 16,
                                   ),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
-                                child: const Text('Save'),
+                                child: const Text(
+                                  'SAVE',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
           ),
+    );
+  }
+
+  Widget _buildChoiceChip(
+    String label,
+    String value,
+    String selectedValue,
+    StateSetter setModalState,
+    Function(String) onSelected,
+  ) {
+    final isSelected = selectedValue == value;
+    return GestureDetector(
+      onTap: () => setModalState(() => onSelected(value)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF000000) : const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(
+            color:
+                isSelected ? const Color(0xFF000000) : const Color(0xFFE0E0E0),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF666666),
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String hint, {
+    bool isNumber = false,
+    bool isCapitalized = false,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Color(0xFF666666),
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
+        filled: true,
+        fillColor: const Color(0xFFFAFAFA),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: Color(0xFF000000), width: 2),
+        ),
+      ),
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      textCapitalization:
+          isCapitalized
+              ? TextCapitalization.characters
+              : TextCapitalization.none,
     );
   }
 
@@ -775,15 +942,21 @@ class _InvestmentScreenState extends State<InvestmentScreen>
   ) async {
     if (symbol.isEmpty || name.isEmpty || price.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields')),
+        const SnackBar(
+          content: Text('Please fill all required fields'),
+          backgroundColor: Color(0xFF000000),
+        ),
       );
       return;
     }
 
     if (type != 'dividend' && quantity.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter quantity')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter quantity'),
+          backgroundColor: Color(0xFF000000),
+        ),
+      );
       return;
     }
 
@@ -938,14 +1111,17 @@ class _InvestmentScreenState extends State<InvestmentScreen>
           content: Text(
             'Investment ${type == 'sell' ? 'sold' : 'added'} successfully!',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF000000),
         ),
       );
       _refreshData();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving investment: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving investment: $e'),
+          backgroundColor: const Color(0xFF000000),
+        ),
+      );
     }
   }
 }
