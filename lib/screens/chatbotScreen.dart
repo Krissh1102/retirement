@@ -1,4 +1,5 @@
 // AI Chatbot Screen with Google Gemini API and Firebase Integration
+// Professional Black & White Design
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:convert';
@@ -184,12 +185,23 @@ PREFERENCES:
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('AI Financial Advisor'),
-        backgroundColor: const Color(0xFF6C63FF),
+        elevation: 0,
+        backgroundColor: Colors.black,
+        title: const Text(
+          'AI Financial Advisor',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadUserData,
             tooltip: 'Refresh data',
           ),
@@ -197,6 +209,7 @@ PREFERENCES:
       ),
       body: Column(
         children: [
+          Container(height: 1, color: Colors.grey.shade300),
           Expanded(
             child:
                 _messages.isEmpty
@@ -204,26 +217,49 @@ PREFERENCES:
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 80,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Ask me anything about your retirement plan!',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 16,
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 2,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
+                            child: Icon(
+                              Icons.chat_outlined,
+                              size: 40,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'AI Financial Advisor',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'I can read and update your data',
+                            'Ask me anything about your retirement plan',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              letterSpacing: 0.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'I can read and update your financial data',
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 12,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -231,7 +267,7 @@ PREFERENCES:
                     )
                     : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final message = _messages[index];
@@ -243,18 +279,26 @@ PREFERENCES:
                                   ? Alignment.centerRight
                                   : Alignment.centerLeft,
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             constraints: BoxConstraints(
                               maxWidth:
                                   MediaQuery.of(context).size.width * 0.75,
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  isUser
-                                      ? const Color(0xFF6C63FF)
-                                      : Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(12),
+                                  isUser ? Colors.black : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color:
+                                    isUser
+                                        ? Colors.black
+                                        : Colors.grey.shade300,
+                                width: 1,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,34 +308,43 @@ PREFERENCES:
                                   style: TextStyle(
                                     color:
                                         isUser ? Colors.white : Colors.black87,
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    letterSpacing: 0.2,
                                   ),
                                 ),
                                 if (message['updated'] == true)
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 8),
+                                    padding: const EdgeInsets.only(top: 10),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
+                                        horizontal: 10,
+                                        vertical: 5,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green.shade100,
+                                        color: Colors.white,
                                         borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: Colors.black,
+                                          width: 1,
+                                        ),
                                       ),
-                                      child: Row(
+                                      child: const Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            Icons.check_circle,
+                                            Icons.check_circle_outline,
                                             size: 14,
-                                            color: Colors.green.shade700,
+                                            color: Colors.black,
                                           ),
-                                          const SizedBox(width: 4),
+                                          SizedBox(width: 6),
                                           Text(
-                                            'Updated',
+                                            'DATA UPDATED',
                                             style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.green.shade700,
+                                              fontSize: 10,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.8,
                                             ),
                                           ),
                                         ],
@@ -307,56 +360,102 @@ PREFERENCES:
           ),
           if (_isLoading)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'AI is thinking...',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Processing...',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
             ),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
                     enabled: !_isLoading,
+                    style: const TextStyle(fontSize: 14, letterSpacing: 0.2),
                     decoration: InputDecoration(
                       hintText: 'Type your message...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                        letterSpacing: 0.2,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Colors.black,
+                          width: 1.5,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 12,
+                        vertical: 14,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-                const SizedBox(width: 8),
-                FloatingActionButton(
-                  onPressed: _isLoading ? null : _sendMessage,
-                  mini: true,
-                  backgroundColor:
-                      _isLoading
-                          ? Colors.grey.shade400
-                          : const Color(0xFF6C63FF),
-                  child: const Icon(Icons.send),
+                const SizedBox(width: 12),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _isLoading ? Colors.grey.shade300 : Colors.black,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: _isLoading ? null : _sendMessage,
+                    icon: const Icon(
+                      Icons.arrow_upward,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
                 ),
               ],
             ),

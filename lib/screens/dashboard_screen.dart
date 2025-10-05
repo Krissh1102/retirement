@@ -19,6 +19,8 @@ class MainHomeScreen extends StatefulWidget {
 class _MainHomeScreenState extends State<MainHomeScreen> {
   int _currentIndex = 0;
   final FirebaseService _firebaseService = FirebaseService();
+  final GlobalKey<_DashboardHomeState> _dashboardKey =
+      GlobalKey<_DashboardHomeState>();
 
   final List<Widget> _screens = [
     const DashboardHome(),
@@ -60,15 +62,17 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed:
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) =>
-                        AIChatbotScreen(firebaseService: _firebaseService),
-              ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      AIChatbotScreen(firebaseService: _firebaseService),
             ),
+          );
+          _dashboardKey.currentState?._loadUserData();
+        },
         backgroundColor: Colors.black,
         elevation: 2,
         icon: const Icon(Icons.psychology_outlined, color: Colors.white),
@@ -862,22 +866,67 @@ class _DashboardHomeState extends State<DashboardHome> {
     final retirementAge = goals['retirement_age'] ?? 60;
     final targetCorpus = (goals['target_corpus'] ?? 0.0).toDouble();
     final currentCorpus = (goals['current_corpus'] ?? 0.0).toDouble();
+    final monthlyIncome = (profile['income'] ?? 0.0).toDouble();
+    final monthlyExpenses = (profile['monthly_expenses'] ?? 0.0).toDouble();
+
     final yearsToRetirement = retirementAge - currentAge;
-    final monthlyGap =
-        yearsToRetirement > 0
-            ? (targetCorpus - currentCorpus) / (yearsToRetirement * 12)
+    final monthsToRetirement = yearsToRetirement * 12;
+
+    // Calculate corpus gap
+    final corpusGap = targetCorpus - currentCorpus;
+
+    // Get expected return rate from user input or default to 12%
+    final expectedReturn =
+        (profile['expected_return_rate'] ?? 12.0).toDouble() / 100;
+    final monthlyReturn = expectedReturn / 12;
+
+    // Calculate required monthly SIP using future value of annuity formula
+    // FV = P * [((1 + r)^n - 1) / r] * (1 + r)
+    final monthlyRequired =
+        corpusGap > 0 && monthsToRetirement > 0
+            ? corpusGap /
+                (((math.pow(1 + monthlyReturn, monthsToRetirement) - 1) /
+                        monthlyReturn) *
+                    (1 + monthlyReturn))
             : 0.0;
+
+    // Get user's current savings capacity
+    final disposableIncome = monthlyIncome - monthlyExpenses;
+    final suggestedSIP =
+        monthlyRequired > disposableIncome * 0.7
+            ? disposableIncome *
+                0.5 // If required is too high, suggest 50% of disposable income
+            : monthlyRequired;
 
     final riskProfile =
         profile['risk_profile']?.toString().toLowerCase() ?? 'moderate';
 
-    // Calculate recommended allocation based on risk profile and age
+    // Calculate dynamic allocation based on user's risk profile and age
     Map<String, double> allocation = _calculateOptimalAllocation(
       riskProfile,
       currentAge,
     );
 
-    final stages = _generateInvestmentStages(currentAge, retirementAge);
+    // Generate personalized stages based on user's timeline
+    final stages = _generateInvestmentStages(
+      currentAge,
+      retirementAge,
+      riskProfile,
+      corpusGap,
+      currentCorpus,
+    );
+
+    // Calculate if user is on track
+    final projectedCorpus = _calculateProjectedCorpus(
+      currentCorpus,
+      suggestedSIP,
+      monthsToRetirement,
+      monthlyReturn,
+    );
+    final onTrackPercentage =
+        targetCorpus > 0
+            ? (projectedCorpus / targetCorpus * 100).clamp(0, 150)
+            : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -892,11 +941,11 @@ class _DashboardHomeState extends State<DashboardHome> {
             children: [
               const Icon(Icons.map_outlined, color: Colors.white, size: 24),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Your Investment Roadmap',
                       style: TextStyle(
                         color: Colors.white,
@@ -904,10 +953,13 @@ class _DashboardHomeState extends State<DashboardHome> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Personalized plan to reach your retirement goal',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      'Personalized plan for $yearsToRetirement years to retirement',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -915,6 +967,64 @@ class _DashboardHomeState extends State<DashboardHome> {
             ],
           ),
           const SizedBox(height: 24),
+
+          // Progress Indicator
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Goal Progress',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    Text(
+                      '${onTrackPercentage.toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (onTrackPercentage / 100).clamp(0.0, 1.0),
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      onTrackPercentage >= 100 ? Colors.green : Colors.orange,
+                    ),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  onTrackPercentage >= 100
+                      ? 'You\'re on track to meet your goal!'
+                      : 'Consider increasing monthly investments',
+                  style: TextStyle(
+                    color:
+                        onTrackPercentage >= 100
+                            ? Colors.green.shade300
+                            : Colors.orange.shade300,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
 
           // Monthly Investment Required
           Container(
@@ -924,51 +1034,68 @@ class _DashboardHomeState extends State<DashboardHome> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Recommended Monthly Investment',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Recommended Monthly SIP',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '₹${_formatCurrency(suggestedSIP)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Gap to cover: ₹${_formatCurrency(corpusGap)}',
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '₹${_formatCurrency(monthlyGap)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$yearsToRetirement yrs',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.calendar_month,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$yearsToRetirement yrs',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
@@ -976,7 +1103,7 @@ class _DashboardHomeState extends State<DashboardHome> {
 
           const SizedBox(height: 24),
 
-          // Asset Allocation
+          // Asset Allocation based on user profile
           Text(
             'Recommended Asset Allocation',
             style: TextStyle(
@@ -984,6 +1111,11 @@ class _DashboardHomeState extends State<DashboardHome> {
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Based on your ${riskProfile} risk profile and $currentAge years age',
+            style: TextStyle(color: Colors.white60, fontSize: 11),
           ),
           const SizedBox(height: 16),
           ...allocation.entries.map(
@@ -1009,6 +1141,56 @@ class _DashboardHomeState extends State<DashboardHome> {
             final isLast = entry.key == stages.length - 1;
             return _buildStageItem(entry.value, isLast);
           }),
+
+          const SizedBox(height: 24),
+
+          // Projection Summary
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Projected Corpus',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      '₹${_formatCurrency(projectedCorpus)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Expected Returns',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      '${(expectedReturn * 100).toStringAsFixed(1)}% p.a.',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 24),
 
@@ -1043,6 +1225,170 @@ class _DashboardHomeState extends State<DashboardHome> {
         ],
       ),
     );
+  }
+
+  // Helper method to calculate projected corpus
+  double _calculateProjectedCorpus(
+    double currentCorpus,
+    double monthlySIP,
+    int months,
+    double monthlyReturn,
+  ) {
+    // Future value of current corpus
+    final fvCurrent = currentCorpus * math.pow(1 + monthlyReturn, months);
+
+    // Future value of SIP annuity
+    final fvSIP =
+        monthlySIP *
+        (((math.pow(1 + monthlyReturn, months) - 1) / monthlyReturn) *
+            (1 + monthlyReturn));
+
+    return fvCurrent + fvSIP;
+  }
+
+  // Enhanced allocation calculation
+  Map<String, double> _calculateOptimalAllocation(String riskProfile, int age) {
+    // Base equity allocation using age rule: 100 - age
+    double equityBase = 100 - age.toDouble();
+
+    // Risk profile multipliers
+    Map<String, double> riskMultipliers = {
+      'conservative': 0.6,
+      'moderate': 1.0,
+      'aggressive': 1.3,
+    };
+
+    double multiplier = riskMultipliers[riskProfile] ?? 1.0;
+    equityBase = (equityBase * multiplier).clamp(20, 85);
+
+    double equity = equityBase;
+    double remainingAllocation = 100 - equity;
+
+    // Distribute remaining based on risk profile
+    double debt, gold, alternative;
+
+    if (riskProfile == 'conservative') {
+      debt = remainingAllocation * 0.75;
+      gold = remainingAllocation * 0.20;
+      alternative = remainingAllocation * 0.05;
+    } else if (riskProfile == 'aggressive') {
+      debt = remainingAllocation * 0.60;
+      gold = remainingAllocation * 0.15;
+      alternative = remainingAllocation * 0.25;
+    } else {
+      debt = remainingAllocation * 0.70;
+      gold = remainingAllocation * 0.20;
+      alternative = remainingAllocation * 0.10;
+    }
+
+    return {
+      'Equity (Stocks/MF)': equity,
+      'Debt (Bonds/FD)': debt,
+      'Gold': gold,
+      'Alternative Assets': alternative,
+    };
+  }
+
+  // Enhanced stage generation
+  List<Map<String, dynamic>> _generateInvestmentStages(
+    int currentAge,
+    int retirementAge,
+    String riskProfile,
+    double corpusGap,
+    double currentCorpus,
+  ) {
+    List<Map<String, dynamic>> stages = [];
+    int yearsToRetirement = retirementAge - currentAge;
+
+    // Calculate milestone ages
+    int phase1End = currentAge + (yearsToRetirement * 0.5).round();
+    int phase2End = retirementAge - 5;
+
+    if (yearsToRetirement > 15) {
+      // Three-phase approach for long timeline
+      stages.add({
+        'title': 'Phase 1: Wealth Accumulation',
+        'period':
+            'Age $currentAge - $phase1End (${phase1End - currentAge} years)',
+        'strategy':
+            riskProfile == 'aggressive'
+                ? 'Focus on high-growth equity funds and direct stocks. Target 70-80% equity allocation for maximum wealth creation.'
+                : riskProfile == 'conservative'
+                ? 'Balanced approach with 40-50% equity in large-cap funds and 50-60% in debt for steady growth with lower volatility.'
+                : 'Invest 60-70% in diversified equity funds and 30-40% in debt instruments for balanced growth.',
+      });
+
+      stages.add({
+        'title': 'Phase 2: Portfolio Rebalancing',
+        'period':
+            'Age $phase1End - $phase2End (${phase2End - phase1End} years)',
+        'strategy':
+            'Gradually reduce equity to ${riskProfile == 'aggressive'
+                ? '50-60%'
+                : riskProfile == 'conservative'
+                ? '30-40%'
+                : '40-50%'}. '
+            'Increase allocation to debt and gold for stability while maintaining growth potential.',
+      });
+
+      stages.add({
+        'title': 'Phase 3: Capital Preservation',
+        'period':
+            'Age $phase2End - $retirementAge (${retirementAge - phase2End} years)',
+        'strategy':
+            'Shift to ${riskProfile == 'aggressive'
+                ? '30-40%'
+                : riskProfile == 'conservative'
+                ? '20-25%'
+                : '25-30%'} equity. '
+            'Focus on liquid funds, FDs, and high-quality bonds to protect accumulated wealth.',
+      });
+    } else if (yearsToRetirement > 5) {
+      // Two-phase approach for medium timeline
+      int midPoint = currentAge + (yearsToRetirement * 0.6).round();
+
+      stages.add({
+        'title': 'Phase 1: Accelerated Growth',
+        'period':
+            'Age $currentAge - $midPoint (${midPoint - currentAge} years)',
+        'strategy':
+            'Maintain ${riskProfile == 'aggressive'
+                ? '60-70%'
+                : riskProfile == 'conservative'
+                ? '35-45%'
+                : '50-60%'} equity allocation. '
+            'Focus on consistent SIP investments to build corpus quickly.',
+      });
+
+      stages.add({
+        'title': 'Phase 2: Stability Focus',
+        'period':
+            'Age $midPoint - $retirementAge (${retirementAge - midPoint} years)',
+        'strategy':
+            'Reduce equity to ${riskProfile == 'aggressive'
+                ? '40-50%'
+                : riskProfile == 'conservative'
+                ? '25-30%'
+                : '30-40%'}. '
+            'Prioritize capital protection while maintaining moderate growth.',
+      });
+    } else {
+      // Single-phase conservative approach for short timeline
+      stages.add({
+        'title': 'Focused Capital Preservation',
+        'period': 'Age $currentAge - $retirementAge ($yearsToRetirement years)',
+        'strategy':
+            'Conservative strategy with ${riskProfile == 'aggressive'
+                ? '35-40%'
+                : riskProfile == 'conservative'
+                ? '20-25%'
+                : '25-35%'} equity. '
+            'Prioritize safety with debt funds, FDs, and low-volatility instruments. '
+            'Consider increasing monthly SIP to compensate for shorter timeline.',
+      });
+    }
+
+    return stages;
   }
 
   Widget _buildAllocationBar(String assetClass, double percentage) {
@@ -1155,103 +1501,104 @@ class _DashboardHomeState extends State<DashboardHome> {
     );
   }
 
-  Map<String, double> _calculateOptimalAllocation(String riskProfile, int age) {
-    // Age-based adjustment (equity reduces with age)
-    double equityBase = 100 - age.toDouble();
+  // Map<String, double> _calculateOptimalAllocation(String riskProfile, int age) {
+  //   // Age-based adjustment (equity reduces with age)
+  //   double equityBase = 100 - age.toDouble();
 
-    // Risk profile adjustment
-    if (riskProfile == 'conservative') {
-      equityBase *= 0.6;
-    } else if (riskProfile == 'aggressive') {
-      equityBase *= 1.2;
-    }
+  //   // Risk profile adjustment
+  //   if (riskProfile == 'conservative') {
+  //     equityBase *= 0.6;
+  //   } else if (riskProfile == 'aggressive') {
+  //     equityBase *= 1.2;
+  //   }
 
-    equityBase = equityBase.clamp(20, 80);
+  //   equityBase = equityBase.clamp(20, 80);
 
-    double equity = equityBase;
-    double debt = (100 - equity) * 0.7;
-    double gold = (100 - equity) * 0.2;
-    double alternative = (100 - equity) * 0.1;
+  //   double equity = equityBase;
+  //   double debt = (100 - equity) * 0.7;
+  //   double gold = (100 - equity) * 0.2;
+  //   double alternative = (100 - equity) * 0.1;
 
-    // Normalize to 100%
-    double total = equity + debt + gold + alternative;
+  //   // Normalize to 100%
+  //   double total = equity + debt + gold + alternative;
 
-    return {
-      'Equity (Stocks/MF)': (equity / total * 100),
-      'Debt (Bonds/FD)': (debt / total * 100),
-      'Gold': (gold / total * 100),
-      'Alternative': (alternative / total * 100),
-    };
-  }
+  //   return {
+  //     'Equity (Stocks/MF)': (equity / total * 100),
+  //     'Debt (Bonds/FD)': (debt / total * 100),
+  //     'Gold': (gold / total * 100),
+  //     'Alternative': (alternative / total * 100),
+  //   };
+  // }
 
-  List<Map<String, dynamic>> _generateInvestmentStages(
-    int currentAge,
-    int retirementAge,
-  ) {
-    List<Map<String, dynamic>> stages = [];
-    int yearsToRetirement = retirementAge - currentAge;
+  // List<Map<String, dynamic>> _generateInvestmentStages(
+  //   int currentAge,
+  //   int retirementAge,
+  // ) {
+  //   List<Map<String, dynamic>> stages = [];
+  //   int yearsToRetirement = retirementAge - currentAge;
 
-    if (yearsToRetirement > 15) {
-      // Aggressive Phase
-      stages.add({
-        'title': 'Phase 1: Growth',
-        'period': 'Age $currentAge - ${currentAge + (yearsToRetirement ~/ 2)}',
-        'strategy':
-            'Focus on high-growth equity investments. Allocate 60-70% to equity mutual funds and stocks for maximum wealth creation.',
-      });
+  //   if (yearsToRetirement > 15) {
+  //     // Aggressive Phase
+  //     stages.add({
+  //       'title': 'Phase 1: Growth',
+  //       'period': 'Age $currentAge - ${currentAge + (yearsToRetirement ~/ 2)}',
+  //       'strategy':
+  //           'Focus on high-growth equity investments. Allocate 60-70% to equity mutual funds and stocks for maximum wealth creation.',
+  //     });
 
-      // Balanced Phase
-      stages.add({
-        'title': 'Phase 2: Consolidation',
-        'period':
-            'Age ${currentAge + (yearsToRetirement ~/ 2)} - ${retirementAge - 5}',
-        'strategy':
-            'Gradually shift to balanced portfolio. Reduce equity to 40-50% and increase debt allocation for stability.',
-      });
+  //     // Balanced Phase
+  //     stages.add({
+  //       'title': 'Phase 2: Consolidation',
+  //       'period':
+  //           'Age ${currentAge + (yearsToRetirement ~/ 2)} - ${retirementAge - 5}',
+  //       'strategy':
+  //           'Gradually shift to balanced portfolio. Reduce equity to 40-50% and increase debt allocation for stability.',
+  //     });
 
-      // Conservative Phase
-      stages.add({
-        'title': 'Phase 3: Preservation',
-        'period': 'Age ${retirementAge - 5} - $retirementAge',
-        'strategy':
-            'Protect accumulated wealth. Move to 30-40% equity with focus on debt instruments and fixed deposits.',
-      });
-    } else if (yearsToRetirement > 5) {
-      // Balanced Approach
-      stages.add({
-        'title': 'Phase 1: Balanced Growth',
-        'period': 'Age $currentAge - ${retirementAge - 3}',
-        'strategy':
-            'Maintain 50-60% equity allocation with focus on large-cap funds and blue-chip stocks for steady growth.',
-      });
+  //     // Conservative Phase
+  //     stages.add({
+  //       'title': 'Phase 3: Preservation',
+  //       'period': 'Age ${retirementAge - 5} - $retirementAge',
+  //       'strategy':
+  //           'Protect accumulated wealth. Move to 30-40% equity with focus on debt instruments and fixed deposits.',
+  //     });
+  //   } else if (yearsToRetirement > 5) {
+  //     // Balanced Approach
+  //     stages.add({
+  //       'title': 'Phase 1: Balanced Growth',
+  //       'period': 'Age $currentAge - ${retirementAge - 3}',
+  //       'strategy':
+  //           'Maintain 50-60% equity allocation with focus on large-cap funds and blue-chip stocks for steady growth.',
+  //     });
 
-      stages.add({
-        'title': 'Phase 2: Capital Protection',
-        'period': 'Age ${retirementAge - 3} - $retirementAge',
-        'strategy':
-            'Shift to conservative allocation with 30-40% equity. Prioritize capital preservation over aggressive growth.',
-      });
-    } else {
-      // Conservative Approach
-      stages.add({
-        'title': 'Capital Preservation Focus',
-        'period': 'Age $currentAge - $retirementAge',
-        'strategy':
-            'Conservative strategy with 30-40% equity. Focus on debt funds, FDs, and guaranteed return instruments to protect capital.',
-      });
-    }
+  //     stages.add({
+  //       'title': 'Phase 2: Capital Protection',
+  //       'period': 'Age ${retirementAge - 3} - $retirementAge',
+  //       'strategy':
+  //           'Shift to conservative allocation with 30-40% equity. Prioritize capital preservation over aggressive growth.',
+  //     });
+  //   } else {
+  //     // Conservative Approach
+  //     stages.add({
+  //       'title': 'Capital Preservation Focus',
+  //       'period': 'Age $currentAge - $retirementAge',
+  //       'strategy':
+  //           'Conservative strategy with 30-40% equity. Focus on debt funds, FDs, and guaranteed return instruments to protect capital.',
+  //     });
+  //   }
 
-    return stages;
-  }
+  //   return stages;
+  // }
 
   String _formatCurrency(double amount) {
-    if (amount >= 10000000) {
-      return '${(amount / 10000000).toStringAsFixed(2)}Cr';
-    } else if (amount >= 100000) {
-      return '${(amount / 100000).toStringAsFixed(2)}L';
-    } else if (amount >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(2)}K';
+    double absAmount = amount.abs();
+    if (absAmount >= 10000000) {
+      return '${(absAmount / 10000000).toStringAsFixed(2)}Cr';
+    } else if (absAmount >= 100000) {
+      return '${(absAmount / 100000).toStringAsFixed(2)}L';
+    } else if (absAmount >= 1000) {
+      return '${(absAmount / 1000).toStringAsFixed(2)}K';
     }
-    return amount.toStringAsFixed(0);
+    return absAmount.toStringAsFixed(0);
   }
 }

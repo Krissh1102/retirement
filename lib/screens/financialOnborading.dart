@@ -386,23 +386,6 @@ class _RetirementQuestionnaireScreenState
             ],
           ),
 
-          _buildTextField(
-            label: 'Annual 80C Investment (₹)',
-            key: 'section80c',
-            keyboardType: TextInputType.number,
-            prefix: '₹',
-            helperText: 'Current investments under Section 80C (max ₹1.5L)',
-            validator: (value) {
-              if (value?.isNotEmpty == true) {
-                final amount = double.tryParse(value!);
-                if (amount == null || amount < 0 || amount > 150000) {
-                  return 'Enter valid amount (max ₹1,50,000)';
-                }
-              }
-              return null;
-            },
-          ),
-
           Row(
             children: [
               Expanded(
